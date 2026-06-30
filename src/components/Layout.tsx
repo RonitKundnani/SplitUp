@@ -13,6 +13,7 @@ export default function Layout() {
           <Link to="/" className="flex items-center gap-2 text-lg font-bold text-brand-600">
             <span className="text-xl">💸</span> SplitUp
           </Link>
+          <Link to="/activity" className="text-sm text-gray-500 hover:text-gray-800">Activity</Link>
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <div className="text-sm font-medium leading-tight">{name}</div>

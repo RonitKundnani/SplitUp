@@ -8,6 +8,7 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import GroupDetail from './pages/GroupDetail'
 import JoinGroup from './pages/JoinGroup'
+import Activity from './pages/Activity'
 
 function Protected({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/groups/:groupId" element={<GroupDetail />} />
         <Route path="/join/:token" element={<JoinGroup />} />
+        <Route path="/activity" element={<Activity />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
