@@ -45,8 +45,10 @@ export function useGroupData(groupId: string | undefined) {
         .eq('group_id', groupId)
         .order('created_at', { ascending: false }),
       supabase
+        // join_requests has two FKs to profiles (profile_id + decided_by), so
+        // disambiguate the embed by naming the foreign-key column explicitly.
         .from('join_requests')
-        .select('*, profile:profiles(*)')
+        .select('*, profile:profiles!profile_id(*)')
         .eq('group_id', groupId)
         .eq('status', 'pending')
         .order('created_at', { ascending: true }),
