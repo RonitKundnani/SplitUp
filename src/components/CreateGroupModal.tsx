@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Modal from './Modal'
+import { CURRENCIES } from '../lib/types'
 
 const EMOJIS = ['👥', '🏠', '✈️', '🍔', '🎉', '🏝️', '🚗', '🎓', '💼', '⚽']
 
@@ -10,10 +11,11 @@ export default function CreateGroupModal({
 }: {
   open: boolean
   onClose: () => void
-  onCreate: (name: string, emoji: string) => Promise<{ error: string | null }>
+  onCreate: (name: string, emoji: string, currency: string) => Promise<{ error: string | null }>
 }) {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('👥')
+  const [currency, setCurrency] = useState('INR')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -22,7 +24,7 @@ export default function CreateGroupModal({
     if (!name.trim()) return
     setBusy(true)
     setError(null)
-    const { error } = await onCreate(name.trim(), emoji)
+    const { error } = await onCreate(name.trim(), emoji, currency)
     setBusy(false)
     if (error) {
       setError(error)
@@ -30,6 +32,7 @@ export default function CreateGroupModal({
     }
     setName('')
     setEmoji('👥')
+    setCurrency('INR')
     onClose()
   }
 
@@ -62,6 +65,23 @@ export default function CreateGroupModal({
               </button>
             ))}
           </div>
+        </div>
+        <div>
+          <label className="label">Currency</label>
+          <select
+            className="input"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.symbol} {c.code} — {c.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-400">
+            All expenses in this group are tracked in this currency.
+          </p>
         </div>
         {error && <p className="text-sm text-rose-600">{error}</p>}
         <button type="submit" className="btn-primary w-full" disabled={busy}>

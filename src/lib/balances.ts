@@ -97,8 +97,54 @@ export function splitEqually(total: number, memberIds: string[]): Record<string,
   return result
 }
 
-export function formatMoney(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+/**
+ * Split a total by percentage. Percentages are expected to sum to ~100; any
+ * rounding remainder (in cents) is given to the largest share so the parts
+ * always add back up to the exact total.
+ */
+export function splitByPercent(
+  total: number,
+  percentById: Record<string, number>,
+): Record<string, number> {
+  const ids = Object.keys(percentById).filter((id) => (percentById[id] ?? 0) > 0)
+  const result: Record<string, number> = {}
+  if (ids.length === 0) return result
+
+  const totalCents = Math.round(total * 100)
+  let allocated = 0
+  for (const id of ids) {
+    const cents = Math.round((totalCents * percentById[id]) / 100)
+    result[id] = cents
+    allocated += cents
+  }
+
+  // Hand the leftover (positive or negative) to the biggest share.
+  const diff = totalCents - allocated
+  if (diff !== 0) {
+    const biggest = ids.reduce((a, b) => (result[a] >= result[b] ? a : b))
+    result[biggest] += diff
+  }
+
+  for (const id of ids) result[id] = result[id] / 100
+  return result
+}
+
+// Locale per currency so digit grouping looks right (e.g. ₹1,00,000 for INR).
+const LOCALE_BY_CURRENCY: Record<string, string> = {
+  INR: 'en-IN',
+  USD: 'en-US',
+  EUR: 'en-IE',
+  GBP: 'en-GB',
+  AED: 'en-AE',
+  AUD: 'en-AU',
+  CAD: 'en-CA',
+  JPY: 'ja-JP',
+  SGD: 'en-SG',
+}
+
+export function formatMoney(amount: number, currency = 'INR'): string {
+  const locale = LOCALE_BY_CURRENCY[currency] ?? 'en-US'
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
   }).format(amount)

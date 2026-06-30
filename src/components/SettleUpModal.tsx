@@ -12,6 +12,7 @@ export default function SettleUpModal({
   debts,
   members,
   currentUserId,
+  currency,
   onSettled,
 }: {
   open: boolean
@@ -20,8 +21,10 @@ export default function SettleUpModal({
   debts: Debt[]
   members: Profile[]
   currentUserId: string
+  currency: string
   onSettled: () => void
 }) {
+  const fmt = (n: number) => formatMoney(n, currency)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,7 +77,7 @@ export default function SettleUpModal({
                   <span className="font-medium">{nameOf(debt.from)}</span>
                   <span className="text-gray-400"> pays </span>
                   <span className="font-medium">{nameOf(debt.to)}</span>
-                  <div className="font-semibold text-brand-600">{formatMoney(debt.amount)}</div>
+                  <div className="font-semibold text-brand-600">{fmt(debt.amount)}</div>
                 </div>
                 <button
                   className="btn-secondary px-3 py-1.5 text-xs"

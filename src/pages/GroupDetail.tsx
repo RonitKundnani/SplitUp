@@ -50,6 +50,8 @@ export default function GroupDetail() {
   if (error) return <p className="text-rose-600">{error}</p>
   if (!group) return <p className="text-gray-500">Group not found.</p>
 
+  const fmt = (n: number) => formatMoney(n, group.currency)
+
   return (
     <div>
       <Link to="/" className="mb-4 inline-block text-sm text-gray-400 hover:text-gray-600">
@@ -95,7 +97,7 @@ export default function GroupDetail() {
             }`}
           >
             {myBalance > 0.009 && '+'}
-            {formatMoney(myBalance)}
+            {fmt(myBalance)}
           </div>
           <div className="text-xs text-gray-400">
             {myBalance > 0.009
@@ -167,14 +169,14 @@ export default function GroupDetail() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{e.description}</div>
                       <div className="text-xs text-gray-400">
-                        {nameOf(e.paid_by)} paid {formatMoney(Number(e.amount))} ·{' '}
+                        {nameOf(e.paid_by)} paid {fmt(Number(e.amount))} ·{' '}
                         {new Date(e.spent_at).toLocaleDateString()}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-gray-400">your share</div>
                       <div className="text-sm font-semibold tabular-nums">
-                        {formatMoney(yourShare)}
+                        {fmt(yourShare)}
                       </div>
                     </div>
                   </li>
@@ -204,8 +206,8 @@ export default function GroupDetail() {
                         : 'text-gray-400'
                   }`}
                 >
-                  {bal > 0.009 ? `gets back ${formatMoney(bal)}` : null}
-                  {bal < -0.009 ? `owes ${formatMoney(-bal)}` : null}
+                  {bal > 0.009 ? `gets back ${fmt(bal)}` : null}
+                  {bal < -0.009 ? `owes ${fmt(-bal)}` : null}
                   {Math.abs(bal) <= 0.009 ? 'settled' : null}
                 </span>
               </div>
@@ -224,7 +226,7 @@ export default function GroupDetail() {
                     <span className="text-gray-400">→</span>
                     <span className="font-medium">{nameOf(d.to)}</span>
                     <span className="ml-auto font-semibold text-brand-600">
-                      {formatMoney(d.amount)}
+                      {fmt(d.amount)}
                     </span>
                   </li>
                 ))}
@@ -240,6 +242,7 @@ export default function GroupDetail() {
         groupId={group.id}
         members={members}
         currentUserId={uid}
+        currency={group.currency}
         onSaved={reload}
       />
       <InviteModal
@@ -256,6 +259,7 @@ export default function GroupDetail() {
         debts={debts}
         members={members}
         currentUserId={uid}
+        currency={group.currency}
         onSettled={reload}
       />
     </div>

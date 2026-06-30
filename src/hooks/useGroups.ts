@@ -25,14 +25,14 @@ export function useGroups() {
   }, [load])
 
   const createGroup = useCallback(
-    async (name: string, emoji: string) => {
+    async (name: string, emoji: string, currency: string) => {
       const { data: userData } = await supabase.auth.getUser()
       const uid = userData.user?.id
       if (!uid) return { error: 'Not signed in' }
 
       const { data, error } = await supabase
         .from('groups')
-        .insert({ name, emoji, created_by: uid })
+        .insert({ name, emoji, currency, created_by: uid })
         .select()
         .single()
       if (error) return { error: error.message }

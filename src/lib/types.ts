@@ -9,9 +9,22 @@ export interface Group {
   id: string
   name: string
   emoji: string
+  currency: string
   created_by: string
   created_at: string
 }
+
+export const CURRENCIES = [
+  { code: 'INR', label: 'Indian Rupee', symbol: '₹' },
+  { code: 'USD', label: 'US Dollar', symbol: '$' },
+  { code: 'EUR', label: 'Euro', symbol: '€' },
+  { code: 'GBP', label: 'British Pound', symbol: '£' },
+  { code: 'AED', label: 'UAE Dirham', symbol: 'د.إ' },
+  { code: 'AUD', label: 'Australian Dollar', symbol: 'A$' },
+  { code: 'CAD', label: 'Canadian Dollar', symbol: 'C$' },
+  { code: 'SGD', label: 'Singapore Dollar', symbol: 'S$' },
+  { code: 'JPY', label: 'Japanese Yen', symbol: '¥' },
+] as const
 
 export interface GroupMember {
   group_id: string
