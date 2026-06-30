@@ -10,7 +10,7 @@ import {
 import { CATEGORIES, categoryMeta } from '../lib/types'
 import Avatar from '../components/Avatar'
 import AddExpenseModal from '../components/AddExpenseModal'
-import AddMemberModal from '../components/AddMemberModal'
+import InviteModal from '../components/InviteModal'
 import SettleUpModal from '../components/SettleUpModal'
 
 type Tab = 'expenses' | 'balances'
@@ -19,11 +19,12 @@ export default function GroupDetail() {
   const { groupId } = useParams()
   const { user } = useAuth()
   const uid = user?.id ?? ''
-  const { group, members, expenses, settlements, loading, error, reload } = useGroupData(groupId)
+  const { group, members, expenses, settlements, requests, loading, error, reload } =
+    useGroupData(groupId)
 
   const [tab, setTab] = useState<Tab>('expenses')
   const [showExpense, setShowExpense] = useState(false)
-  const [showMember, setShowMember] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [showSettle, setShowSettle] = useState(false)
   const [filter, setFilter] = useState<string>('all')
 
@@ -64,9 +65,14 @@ export default function GroupDetail() {
             <h1 className="text-2xl font-bold">{group.name}</h1>
             <button
               className="text-sm text-gray-400 hover:text-gray-600"
-              onClick={() => setShowMember(true)}
+              onClick={() => setShowInvite(true)}
             >
-              {members.length} member{members.length === 1 ? '' : 's'} · + add
+              {members.length} member{members.length === 1 ? '' : 's'} · invite
+              {requests.length > 0 && (
+                <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {requests.length} pending
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -236,12 +242,12 @@ export default function GroupDetail() {
         currentUserId={uid}
         onSaved={reload}
       />
-      <AddMemberModal
-        open={showMember}
-        onClose={() => setShowMember(false)}
+      <InviteModal
+        open={showInvite}
+        onClose={() => setShowInvite(false)}
         groupId={group.id}
-        existingIds={members.map((m) => m.id)}
-        onAdded={reload}
+        requests={requests}
+        onChanged={reload}
       />
       <SettleUpModal
         open={showSettle}

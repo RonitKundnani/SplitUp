@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Signup() {
   const { user, signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/'
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -12,7 +14,7 @@ export default function Signup() {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to={redirect} replace />
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -29,7 +31,7 @@ export default function Signup() {
       'Account created! If email confirmation is enabled on your Supabase project, ' +
         'check your inbox. Otherwise you can sign in now.',
     )
-    setTimeout(() => navigate('/'), 1200)
+    setTimeout(() => navigate(redirect), 1200)
   }
 
   return (
@@ -82,7 +84,10 @@ export default function Signup() {
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-brand-600 hover:underline">
+          <Link
+            to={`/login?redirect=${encodeURIComponent(redirect)}`}
+            className="font-medium text-brand-600 hover:underline"
+          >
             Sign in
           </Link>
         </p>

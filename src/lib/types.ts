@@ -49,6 +49,15 @@ export interface Settlement {
   created_at: string
 }
 
+export interface JoinRequest {
+  id: string
+  group_id: string
+  profile_id: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  profile?: Profile
+}
+
 export const CATEGORIES = [
   { key: 'general', label: 'General', emoji: '🧾' },
   { key: 'food', label: 'Food & Drink', emoji: '🍔' },

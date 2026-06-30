@@ -7,7 +7,8 @@ layer can be reused for a React Native mobile app later.
 ## Features
 
 - **Auth** — email/password sign up & sign in (Supabase Auth).
-- **Profiles & groups** — create groups (roommates, trips, projects) and add members by email.
+- **Profiles & groups** — create groups (roommates, trips, projects).
+- **Invite by link & approve requests** — share a `/join/<token>` link; opening it sends a *request* (no auto-join) that an existing member approves or declines.
 - **Add & split expenses** — split equally across selected members or enter custom amounts; pick who paid, a category, and a date.
 - **Balances & settle up** — net balance per person plus a greedy debt-simplification algorithm that suggests the fewest payments to clear everyone. Record settlements with one tap.
 - **History & categories** — full expense history filterable by category.

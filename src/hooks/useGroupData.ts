@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Expense, Group, Profile, Settlement } from '../lib/types'
+import type { Expense, Group, JoinRequest, Profile, Settlement } from '../lib/types'
 
 interface GroupData {
   group: Group | null
   members: Profile[]
   expenses: Expense[]
   settlements: Settlement[]
+  requests: JoinRequest[]
   loading: boolean
   error: string | null
 }
@@ -17,6 +18,7 @@ export function useGroupData(groupId: string | undefined) {
     members: [],
     expenses: [],
     settlements: [],
+    requests: [],
     loading: true,
     error: null,
   })
@@ -25,7 +27,7 @@ export function useGroupData(groupId: string | undefined) {
     if (!groupId) return
     setData((d) => ({ ...d, loading: true, error: null }))
 
-    const [groupRes, membersRes, expensesRes, settlementsRes] = await Promise.all([
+    const [groupRes, membersRes, expensesRes, settlementsRes, requestsRes] = await Promise.all([
       supabase.from('groups').select('*').eq('id', groupId).single(),
       supabase
         .from('group_members')
@@ -42,6 +44,12 @@ export function useGroupData(groupId: string | undefined) {
         .select('*')
         .eq('group_id', groupId)
         .order('created_at', { ascending: false }),
+      supabase
+        .from('join_requests')
+        .select('*, profile:profiles(*)')
+        .eq('group_id', groupId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true }),
     ])
 
     const error =
@@ -49,6 +57,7 @@ export function useGroupData(groupId: string | undefined) {
       membersRes.error?.message ||
       expensesRes.error?.message ||
       settlementsRes.error?.message ||
+      requestsRes.error?.message ||
       null
 
     // The embedded join can come back as an object or a single-element array
@@ -57,11 +66,21 @@ export function useGroupData(groupId: string | undefined) {
       .map((row) => (Array.isArray(row.profile) ? row.profile[0] : row.profile))
       .filter((p): p is Profile => Boolean(p))
 
+    const requests: JoinRequest[] = (
+      (requestsRes.data ?? []) as (Omit<JoinRequest, 'profile'> & {
+        profile: Profile | Profile[] | null
+      })[]
+    ).map((r) => ({
+      ...r,
+      profile: Array.isArray(r.profile) ? r.profile[0] : r.profile ?? undefined,
+    }))
+
     setData({
       group: (groupRes.data as Group) ?? null,
       members,
       expenses: (expensesRes.data as Expense[]) ?? [],
       settlements: (settlementsRes.data as Settlement[]) ?? [],
+      requests,
       loading: false,
       error,
     })

@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const { user, signIn } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to={redirect} replace />
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -19,7 +21,7 @@ export default function Login() {
     const { error } = await signIn(email, password)
     setBusy(false)
     if (error) setError(error)
-    else navigate('/')
+    else navigate(redirect)
   }
 
   return (
@@ -60,7 +62,10 @@ export default function Login() {
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
           New here?{' '}
-          <Link to="/signup" className="font-medium text-brand-600 hover:underline">
+          <Link
+            to={`/signup?redirect=${encodeURIComponent(redirect)}`}
+            className="font-medium text-brand-600 hover:underline"
+          >
             Create an account
           </Link>
         </p>
