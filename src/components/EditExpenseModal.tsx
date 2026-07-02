@@ -37,7 +37,9 @@ export default function EditExpenseModal({
   const [spentAt, setSpentAt] = useState('')
   const [mode, setMode] = useState<SplitMode>('equal')
   const [involved, setInvolved] = useState<Set<string>>(new Set())
-  const [fullPayer, setFullPayer] = useState('')
+  const [fullPayer, setFullPayer] = useState(
+    () => members.find((m) => m.id !== currentUserId)?.id ?? (members[0]?.id ?? ''),
+  )
   const [percent, setPercent] = useState<Record<string, string>>({})
   const [custom, setCustom] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)

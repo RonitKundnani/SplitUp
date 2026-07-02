@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useGroupData } from '../hooks/useGroupData'
@@ -43,9 +43,18 @@ export default function GroupDetail() {
   const debts = useMemo(() => simplifyDebts(net), [net])
   const myBalance = net[uid] ?? 0
 
-  // Auto-fire overdue recurring expenses once members load.
+  // Auto-fire overdue recurring expenses exactly once per group load.
+  // A ref guard prevents re-firing when reload() causes members to get a new
+  // array reference (which would otherwise re-trigger this effect infinitely).
+  const firedRef = useRef(false)
   useEffect(() => {
-    if (members.length > 0) fireOverdue(members.map((m) => m.id))
+    firedRef.current = false
+  }, [groupId])
+  useEffect(() => {
+    if (members.length > 0 && !firedRef.current) {
+      firedRef.current = true
+      fireOverdue(members.map((m) => m.id))
+    }
   }, [members, fireOverdue])
 
   const nameOf = (id: string) => {

@@ -78,10 +78,13 @@ export function useRecurring(groupId: string | undefined, currentUserId: string,
         splits.map((s) => ({ expense_id: exp.id, profile_id: s.profile_id, amount: s.amount }))
       )
 
-      // Advance next_due_at.
+      // Advance next_due_at past today so it doesn't re-fire on the next load
+      // even if the app was unused for multiple periods.
+      let next = nextDueDate(r.frequency, new Date(r.next_due_at))
+      while (next <= today) next = nextDueDate(r.frequency, new Date(next))
       await supabase
         .from('recurring_expenses')
-        .update({ next_due_at: nextDueDate(r.frequency, new Date(r.next_due_at)) })
+        .update({ next_due_at: next })
         .eq('id', r.id)
 
       fired = true
