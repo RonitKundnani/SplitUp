@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
+import type { AuthResponse, Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
 interface AuthState {
@@ -12,7 +12,7 @@ interface AuthState {
     email: string,
     password: string,
     fullName: string,
-  ) => Promise<{ error: string | null }>
+  ) => Promise<{ error: string | null; data: AuthResponse['data'] | null }>
   signOut: () => Promise<void>
 }
 
@@ -47,12 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: error?.message ?? null }
       },
       async signUp(email, password, fullName) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { full_name: fullName } },
         })
-        return { error: error?.message ?? null }
+        return { error: error?.message ?? null, data: error ? null : data }
       },
       async signOut() {
         await supabase.auth.signOut()

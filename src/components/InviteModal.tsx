@@ -107,7 +107,7 @@ export default function InviteModal({
     <Modal open={open} onClose={onClose} title="Invite people">
       <div className="space-y-5">
         <div>
-          <p className="mb-2 text-sm text-gray-500">
+          <p className="mb-2 text-sm text-gray-500 dark:text-slate-400">
             Share this link. Anyone who opens it can ask to join — you approve the request before
             they&apos;re added.
           </p>
@@ -129,7 +129,7 @@ export default function InviteModal({
             Pending requests{requests.length > 0 && ` (${requests.length})`}
           </div>
           {requests.length === 0 ? (
-            <p className="text-sm text-gray-400">No pending requests right now.</p>
+            <p className="text-sm text-gray-400 dark:text-slate-500">No pending requests right now.</p>
           ) : (
             <ul className="space-y-2">
               {requests.map((req) => {
@@ -137,12 +137,12 @@ export default function InviteModal({
                 return (
                   <li
                     key={req.id}
-                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-2.5"
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-2.5 dark:border-slate-700"
                   >
                     <Avatar name={name} seed={req.profile_id} size={32} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{name}</div>
-                      <div className="truncate text-xs text-gray-400">{req.profile?.email}</div>
+                      <div className="truncate text-xs text-gray-400 dark:text-slate-500">{req.profile?.email}</div>
                     </div>
                     <button
                       className="btn-ghost px-2 py-1 text-xs text-rose-600"

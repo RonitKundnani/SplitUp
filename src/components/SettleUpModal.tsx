@@ -57,11 +57,11 @@ export default function SettleUpModal({
         <div className="py-6 text-center">
           <div className="text-3xl">🎉</div>
           <p className="mt-2 font-medium">All settled up!</p>
-          <p className="text-sm text-gray-500">No outstanding balances in this group.</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">No outstanding balances in this group.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
             The simplest set of payments to clear all balances. Tap a row once the payment has been
             made to record it.
           </p>
@@ -70,12 +70,12 @@ export default function SettleUpModal({
             return (
               <div
                 key={key}
-                className="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
+                className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-3"
               >
                 <Avatar name={nameOf(debt.from)} seed={debt.from} size={32} />
                 <div className="flex-1 text-sm">
                   <span className="font-medium">{nameOf(debt.from)}</span>
-                  <span className="text-gray-400"> pays </span>
+                  <span className="text-gray-400 dark:text-slate-500"> pays </span>
                   <span className="font-medium">{nameOf(debt.to)}</span>
                   <div className="font-semibold text-brand-600">{fmt(debt.amount)}</div>
                 </div>

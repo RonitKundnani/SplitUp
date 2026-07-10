@@ -67,13 +67,20 @@ export default function JoinGroup() {
     if (!info || !user) return
     setStatus('submitting')
     setError(null)
-    // Upsert tolerates a previously rejected request for the same group.
+    // join_requests has unique(group_id, profile_id). RLS lets a user DELETE
+    // their own request but not UPDATE it, so clear any stale row (e.g. an old
+    // 'approved' row left over from a group they joined and later left) before
+    // inserting a fresh pending request — otherwise the insert hits a
+    // duplicate-key violation.
+    await supabase
+      .from('join_requests')
+      .delete()
+      .eq('group_id', info.group_id)
+      .eq('profile_id', user.id)
+
     const { error } = await supabase
       .from('join_requests')
-      .upsert(
-        { group_id: info.group_id, profile_id: user.id, status: 'pending' },
-        { onConflict: 'group_id,profile_id' },
-      )
+      .insert({ group_id: info.group_id, profile_id: user.id, status: 'pending' })
     if (error) {
       setStatus('ready')
       setError(error.message)
@@ -85,13 +92,13 @@ export default function JoinGroup() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center p-4">
       <div className="card w-full max-w-sm p-8 text-center">
-        {status === 'loading' && <p className="text-gray-400">Checking invite…</p>}
+        {status === 'loading' && <p className="text-gray-400 dark:text-slate-500">Checking invite…</p>}
 
         {status === 'invalid' && (
           <>
             <div className="text-4xl">🔗</div>
             <h1 className="mt-2 text-xl font-bold">Invite not found</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
               This link is invalid or has been removed. Ask for a fresh one.
             </p>
             <Link to="/" className="btn-secondary mt-4">
@@ -104,7 +111,7 @@ export default function JoinGroup() {
           <>
             <div className="text-4xl">{info.group_emoji}</div>
             <h1 className="mt-2 text-xl font-bold">{info.group_name}</h1>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 dark:text-slate-500">
               {info.member_count} member{info.member_count === 1 ? '' : 's'}
             </p>
 
@@ -122,7 +129,7 @@ export default function JoinGroup() {
 
             {status === 'requested' && (
               <>
-                <p className="mt-4 text-sm text-gray-600">
+                <p className="mt-4 text-sm text-gray-600 dark:text-slate-300">
                   Your request to join is pending. You&apos;ll get in once a member approves it.
                 </p>
                 <Link to="/" className="btn-secondary mt-3 inline-block">
@@ -133,7 +140,7 @@ export default function JoinGroup() {
 
             {(status === 'ready' || status === 'submitting') && (
               <>
-                <p className="mt-4 text-sm text-gray-600">
+                <p className="mt-4 text-sm text-gray-600 dark:text-slate-300">
                   Request to join this group. A current member will approve you.
                 </p>
                 <button
@@ -149,7 +156,7 @@ export default function JoinGroup() {
             {status === 'done' && (
               <>
                 <div className="mt-4 text-2xl">✅</div>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">
                   Request sent! You&apos;ll see the group here once a member approves it.
                 </p>
                 <Link to="/" className="btn-secondary mt-3 inline-block">

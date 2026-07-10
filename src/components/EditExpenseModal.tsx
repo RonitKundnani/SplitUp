@@ -196,16 +196,16 @@ export default function EditExpenseModal({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="label mb-0">Split</label>
-            <div className="flex rounded-lg bg-gray-100 p-0.5 text-xs font-medium">
+            <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-slate-800 text-xs font-medium">
               {(Object.keys(MODE_LABELS) as SplitMode[]).map((m) => (
                 <button type="button" key={m} onClick={() => setMode(m)}
-                  className={`rounded-md px-2 py-1 transition ${mode === m ? 'bg-white shadow-sm' : 'text-gray-500'}`}>
+                  className={`rounded-md px-2 py-1 transition ${mode === m ? 'bg-white shadow-sm dark:bg-slate-700' : 'text-gray-500 dark:text-slate-400'}`}>
                   {MODE_LABELS[m]}
                 </button>
               ))}
             </div>
           </div>
-          <div className="space-y-1 rounded-lg border border-gray-200 p-2">
+          <div className="space-y-1 rounded-lg border border-gray-200 dark:border-slate-700 p-2">
             {members.map((m) => (
               <div key={m.id} className="flex items-center gap-3 rounded-md px-2 py-1.5">
                 {mode === 'equal' && (
@@ -217,16 +217,16 @@ export default function EditExpenseModal({
                 <span className="flex-1 truncate text-sm">{labelFor(m)}</span>
                 {mode === 'percent' ? (
                   <div className="flex items-center gap-1">
-                    <input type="number" step="0.1" min="0" className="w-16 rounded-md border border-gray-300 px-2 py-1 text-right text-sm"
+                    <input type="number" step="0.1" min="0" className="w-16 rounded-md border border-gray-300 dark:border-slate-700 px-2 py-1 text-right text-sm"
                       value={percent[m.id] ?? ''} onChange={(e) => setPercent((p) => ({ ...p, [m.id]: e.target.value }))} placeholder="0" />
-                    <span className="text-xs text-gray-400">%</span>
-                    <span className="w-20 text-right text-xs tabular-nums text-gray-400">{fmt(splitMap[m.id] ?? 0)}</span>
+                    <span className="text-xs text-gray-400 dark:text-slate-500">%</span>
+                    <span className="w-20 text-right text-xs tabular-nums text-gray-400 dark:text-slate-500">{fmt(splitMap[m.id] ?? 0)}</span>
                   </div>
                 ) : mode === 'custom' ? (
-                  <input type="number" step="0.01" min="0" className="w-24 rounded-md border border-gray-300 px-2 py-1 text-right text-sm"
+                  <input type="number" step="0.01" min="0" className="w-24 rounded-md border border-gray-300 dark:border-slate-700 px-2 py-1 text-right text-sm"
                     value={custom[m.id] ?? ''} onChange={(e) => setCustom((c) => ({ ...c, [m.id]: e.target.value }))} placeholder="0.00" />
                 ) : (
-                  <span className="text-sm tabular-nums text-gray-500">
+                  <span className="text-sm tabular-nums text-gray-500 dark:text-slate-400">
                     {(mode === 'equal' && involved.has(m.id)) || (mode === 'full' && fullPayer === m.id)
                       ? fmt(splitMap[m.id] ?? 0) : '—'}
                   </span>
@@ -235,12 +235,12 @@ export default function EditExpenseModal({
             ))}
           </div>
           {mode === 'percent' && (
-            <p className={`mt-1 text-right text-xs ${Math.abs(percentSum - 100) > 0.1 ? 'text-rose-600' : 'text-gray-400'}`}>
+            <p className={`mt-1 text-right text-xs ${Math.abs(percentSum - 100) > 0.1 ? 'text-rose-600' : 'text-gray-400 dark:text-slate-500'}`}>
               {percentSum}% of 100%
             </p>
           )}
           {mode === 'custom' && (
-            <p className={`mt-1 text-right text-xs ${Math.abs(splitSum - total) > 0.01 ? 'text-rose-600' : 'text-gray-400'}`}>
+            <p className={`mt-1 text-right text-xs ${Math.abs(splitSum - total) > 0.01 ? 'text-rose-600' : 'text-gray-400 dark:text-slate-500'}`}>
               {fmt(splitSum)} of {fmt(total)}
             </p>
           )}

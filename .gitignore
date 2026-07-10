@@ -8,3 +8,4 @@ dist-ssr
 *.log
 .vscode/*
 !.vscode/extensions.json
+CHANGES_FOR_WEB.md

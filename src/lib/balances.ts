@@ -77,6 +77,37 @@ export function simplifyDebts(net: Record<string, number>): Debt[] {
 }
 
 /**
+ * Exact pairwise "who owes whom" — the un-simplified view. For every pair it
+ * nets what A owes B against what B owes A and emits a single directed debt.
+ * Unlike simplifyDebts this never reroutes money through third parties.
+ */
+export function computePairwiseDebts(
+  expenses: Expense[],
+  settlements: Settlement[],
+): Debt[] {
+  const owes: Record<string, Record<string, number>> = {}
+  const add = (a: string, b: string, amt: number) => {
+    if (a === b) return
+    owes[a] = owes[a] ?? {}
+    owes[a][b] = (owes[a][b] ?? 0) + amt
+  }
+  for (const e of expenses) for (const s of e.splits ?? []) add(s.profile_id, e.paid_by, Number(s.amount))
+  for (const s of settlements) add(s.from_profile, s.to_profile, -Number(s.amount))
+  const seen = new Set<string>()
+  const debts: Debt[] = []
+  for (const a of Object.keys(owes))
+    for (const b of Object.keys(owes[a])) {
+      const key = [a, b].sort().join('|')
+      if (seen.has(key)) continue
+      seen.add(key)
+      const netAB = round2((owes[a]?.[b] ?? 0) - (owes[b]?.[a] ?? 0))
+      if (netAB > 0.009) debts.push({ from: a, to: b, amount: netAB })
+      else if (netAB < -0.009) debts.push({ from: b, to: a, amount: round2(-netAB) })
+    }
+  return debts.sort((x, y) => y.amount - x.amount)
+}
+
+/**
  * Split a total equally across n people in cents so the parts always sum back
  * to the exact total (the first few people absorb the rounding remainder).
  */

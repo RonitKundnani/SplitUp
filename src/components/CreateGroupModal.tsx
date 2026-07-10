@@ -79,7 +79,7 @@ export default function CreateGroupModal({
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
             All expenses in this group are tracked in this currency.
           </p>
         </div>

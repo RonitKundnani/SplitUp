@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import BrandMark from '../components/BrandMark'
 
 export default function Signup() {
   const { user, signUp } = useAuth()
@@ -11,7 +12,7 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [verifySent, setVerifySent] = useState(false)
   const [busy, setBusy] = useState(false)
 
   if (user) return <Navigate to={redirect} replace />
@@ -20,27 +21,62 @@ export default function Signup() {
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const { error } = await signUp(email, password, fullName)
+    const { error, data } = await signUp(email, password, fullName)
     setBusy(false)
     if (error) {
       setError(error)
       return
     }
-    // If email confirmation is on, there is no session yet.
-    setNotice(
-      'Account created! If email confirmation is enabled on your Supabase project, ' +
-        'check your inbox. Otherwise you can sign in now.',
+    // When confirmations are on and the email is already registered, Supabase
+    // returns a user with an empty `identities` array (and no session).
+    const alreadyRegistered = !!data?.user && data.user.identities?.length === 0
+    if (alreadyRegistered) {
+      setError('This email is already registered. Log in instead.')
+      return
+    }
+    // No session back means the email must be confirmed before signing in.
+    const needsConfirmation = !data?.session
+    if (needsConfirmation) {
+      setVerifySent(true)
+      return
+    }
+    // Confirmations off → session is live, go straight in.
+    navigate(redirect)
+  }
+
+  if (verifySent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="card w-full max-w-sm p-8 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-2xl dark:bg-brand-500/20">
+            ✅
+          </div>
+          <h1 className="mt-4 text-xl font-bold">Verify your email</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+            We sent a confirmation link to <span className="font-medium">{email}</span>. Click it,
+            then come back and sign in.
+          </p>
+          <Link
+            to={`/login?redirect=${encodeURIComponent(redirect)}`}
+            className="btn-primary mt-5 inline-block w-full"
+          >
+            Go to login
+          </Link>
+          <p className="mt-3 text-xs text-gray-400 dark:text-slate-500">
+            Didn&apos;t get it? Check your spam folder.
+          </p>
+        </div>
+      </div>
     )
-    setTimeout(() => navigate(redirect), 1200)
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="card w-full max-w-sm p-8">
         <div className="mb-6 text-center">
-          <div className="text-3xl">💸</div>
-          <h1 className="mt-2 text-2xl font-bold">Create your account</h1>
-          <p className="text-sm text-gray-500">Start splitting expenses</p>
+          <BrandMark />
+          <h1 className="mt-3 text-2xl font-bold">Create your account</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Start splitting expenses</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
@@ -77,12 +113,11 @@ export default function Signup() {
             />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
-          {notice && <p className="text-sm text-brand-600">{notice}</p>}
           <button type="submit" className="btn-primary w-full" disabled={busy}>
             {busy ? 'Creating…' : 'Create account'}
           </button>
         </form>
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-sm text-gray-500 dark:text-slate-400">
           Already have an account?{' '}
           <Link
             to={`/login?redirect=${encodeURIComponent(redirect)}`}

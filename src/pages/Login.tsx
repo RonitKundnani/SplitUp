@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import BrandMark from '../components/BrandMark'
 
 export default function Login() {
   const { user, signIn } = useAuth()
@@ -28,9 +29,9 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="card w-full max-w-sm p-8">
         <div className="mb-6 text-center">
-          <div className="text-3xl">💸</div>
-          <h1 className="mt-2 text-2xl font-bold">Welcome back</h1>
-          <p className="text-sm text-gray-500">Sign in to SplitUp</p>
+          <BrandMark />
+          <h1 className="mt-3 text-2xl font-bold">Welcome back</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">Sign in to SplitUp</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
@@ -60,7 +61,12 @@ export default function Login() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-4 text-center text-sm">
+          <Link to="/forgot-password" className="font-medium text-brand-600 hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+        <p className="mt-4 text-center text-sm text-gray-500 dark:text-slate-400">
           New here?{' '}
           <Link
             to={`/signup?redirect=${encodeURIComponent(redirect)}`}

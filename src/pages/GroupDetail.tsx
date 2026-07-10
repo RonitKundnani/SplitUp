@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useGroupData } from '../hooks/useGroupData'
 import { useRecurring } from '../hooks/useRecurring'
-import { computeNetBalances, formatMoney, simplifyDebts } from '../lib/balances'
+import { computeNetBalances, computePairwiseDebts, formatMoney, simplifyDebts } from '../lib/balances'
 import { CATEGORIES, categoryMeta, type Expense, timeAgo } from '../lib/types'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
@@ -38,9 +38,16 @@ export default function GroupDetail() {
   const [filter, setFilter] = useState<string>('all')
   const [leaving, setLeaving] = useState(false)
   const [leaveError, setLeaveError] = useState<string | null>(null)
+  const [simplify, setSimplify] = useState(true)
+  const [confirmDelRec, setConfirmDelRec] = useState<string | null>(null)
 
   const net = useMemo(() => computeNetBalances(expenses, settlements), [expenses, settlements])
-  const debts = useMemo(() => simplifyDebts(net), [net])
+  const simplified = useMemo(() => simplifyDebts(net), [net])
+  const pairwise = useMemo(
+    () => computePairwiseDebts(expenses, settlements),
+    [expenses, settlements],
+  )
+  const debts = simplify ? simplified : pairwise
   const myBalance = net[uid] ?? 0
 
   // Auto-fire overdue recurring expenses exactly once per group load.
@@ -62,6 +69,16 @@ export default function GroupDetail() {
     if (!m) return 'Someone'
     return m.id === uid ? 'You' : m.full_name || m.email
   }
+
+  // For a 1-on-1 personal group, show the *other* member's name as the title.
+  const otherMember = useMemo(
+    () => (group?.type === 'personal' ? members.find((m) => m.id !== uid) : undefined),
+    [group?.type, members, uid],
+  )
+  const title =
+    group?.type === 'personal' && otherMember
+      ? otherMember.full_name || otherMember.email
+      : group?.name
 
   const filteredExpenses = useMemo(
     () => (filter === 'all' ? expenses : expenses.filter((e) => e.category === filter)),
@@ -118,9 +135,9 @@ export default function GroupDetail() {
     navigate('/')
   }
 
-  if (loading) return <p className="text-gray-400">Loading group…</p>
+  if (loading) return <p className="text-gray-400 dark:text-slate-500">Loading group…</p>
   if (error) return <p className="text-rose-600">{error}</p>
-  if (!group) return <p className="text-gray-500">Group not found.</p>
+  if (!group) return <p className="text-gray-500 dark:text-slate-400">Group not found.</p>
 
   const fmt = (n: number) => formatMoney(n, group.currency)
 
@@ -128,7 +145,7 @@ export default function GroupDetail() {
     <div>
       <Link
         to={group.type === 'personal' ? '/?tab=friends' : '/'}
-        className="mb-4 inline-block text-sm text-gray-400 hover:text-gray-600"
+        className="mb-4 inline-block text-sm text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
       >
         {group.type === 'personal' ? '← All friends' : '← All groups'}
       </Link>
@@ -136,17 +153,20 @@ export default function GroupDetail() {
       {/* Header */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-2xl">
-            {group.emoji}
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-2xl dark:bg-brand-500/20">
+            {group.type === 'personal' ? '👤' : group.emoji}
           </span>
           <div>
-            <h1 className="text-2xl font-bold">{group.name}</h1>
+            <h1 className="text-2xl font-bold">{title}</h1>
             {group.type === 'personal' ? (
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-gray-400 dark:text-slate-500">
                 {members.length} member{members.length === 1 ? '' : 's'}
               </span>
             ) : (
-              <button className="text-sm text-gray-400 hover:text-gray-600" onClick={() => setShowInvite(true)}>
+              <button
+                className="text-sm text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
+                onClick={() => setShowInvite(true)}
+              >
                 {members.length} member{members.length === 1 ? '' : 's'} · invite
                 {requests.length > 0 && (
                   <span className="ml-1 rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -163,11 +183,11 @@ export default function GroupDetail() {
       {/* Balance card */}
       <div className="card mb-5 flex items-center justify-between p-4">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">Your balance</div>
-          <div className={`text-2xl font-bold ${myBalance > 0.009 ? 'text-brand-600' : myBalance < -0.009 ? 'text-rose-600' : 'text-gray-700'}`}>
+          <div className="text-xs uppercase tracking-wide text-gray-400 dark:text-slate-500">Your balance</div>
+          <div className={`text-2xl font-bold ${myBalance > 0.009 ? 'text-brand-600' : myBalance < -0.009 ? 'text-rose-600' : 'text-gray-700 dark:text-slate-300'}`}>
             {myBalance > 0.009 && '+'}{fmt(myBalance)}
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-400 dark:text-slate-500">
             {myBalance > 0.009 ? 'you are owed' : myBalance < -0.009 ? 'you owe' : 'all settled'}
           </div>
         </div>
@@ -179,16 +199,16 @@ export default function GroupDetail() {
         {members.map((m) => (
           <div key={m.id} className="flex items-center gap-2">
             <Avatar name={m.full_name || m.email} seed={m.id} size={28} />
-            <span className="text-sm text-gray-600">{m.id === uid ? 'You' : m.full_name || m.email}</span>
+            <span className="text-sm text-gray-600 dark:text-slate-300">{m.id === uid ? 'You' : m.full_name || m.email}</span>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="mb-4 grid grid-cols-4 gap-1 rounded-lg bg-gray-100 p-1 text-sm font-medium">
+      <div className="mb-4 grid grid-cols-4 gap-1 rounded-lg bg-gray-100 p-1 text-sm font-medium dark:bg-slate-800">
         {(['expenses', 'balances', 'insights', 'recurring'] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`rounded-md py-2 capitalize transition ${tab === t ? 'bg-white shadow-sm' : 'text-gray-500'}`}>
+            className={`rounded-md py-2 capitalize transition ${tab === t ? 'bg-white shadow-sm dark:bg-slate-700' : 'text-gray-500 dark:text-slate-400'}`}>
             {t === 'recurring' ? '🔁' : ''}{t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -207,7 +227,7 @@ export default function GroupDetail() {
           </div>
 
           {filteredExpenses.length === 0 ? (
-            <div className="card p-8 text-center text-sm text-gray-500">
+            <div className="card p-8 text-center text-sm text-gray-500 dark:text-slate-400">
               No expenses{filter !== 'all' ? ' in this category' : ''} yet.
             </div>
           ) : (
@@ -218,22 +238,22 @@ export default function GroupDetail() {
                 const canEdit = e.created_by === uid
                 return (
                   <li key={e.id} className="card flex items-center gap-3 p-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 text-lg">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 text-lg dark:bg-slate-800">
                       {meta.emoji}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{e.description}</div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-gray-400 dark:text-slate-500">
                         {nameOf(e.paid_by)} paid {fmt(Number(e.amount))} · {new Date(e.spent_at).toLocaleDateString()}
                         {' · '}{timeAgo(e.created_at)}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-gray-400">your share</div>
+                      <div className="text-xs text-gray-400 dark:text-slate-500">your share</div>
                       <div className="text-sm font-semibold tabular-nums">{fmt(yourShare)}</div>
                     </div>
                     {canEdit && (
-                      <button className="btn-ghost shrink-0 px-2 py-1 text-xs text-gray-400 hover:text-gray-700"
+                      <button className="btn-ghost shrink-0 px-2 py-1 text-xs text-gray-400 hover:text-gray-700 dark:text-slate-500"
                         onClick={() => setEditExpense(e)}>✏️</button>
                     )}
                   </li>
@@ -253,23 +273,44 @@ export default function GroupDetail() {
               <div key={m.id} className="card flex items-center gap-3 p-3">
                 <Avatar name={m.full_name || m.email} seed={m.id} size={36} />
                 <span className="flex-1 text-sm font-medium">{m.id === uid ? 'You' : m.full_name || m.email}</span>
-                <span className={`text-sm font-semibold tabular-nums ${bal > 0.009 ? 'text-brand-600' : bal < -0.009 ? 'text-rose-600' : 'text-gray-400'}`}>
+                <span className={`text-sm font-semibold tabular-nums ${bal > 0.009 ? 'text-brand-600' : bal < -0.009 ? 'text-rose-600' : 'text-gray-400 dark:text-slate-500'}`}>
                   {bal > 0.009 ? `gets back ${fmt(bal)}` : bal < -0.009 ? `owes ${fmt(-bal)}` : 'settled'}
                 </span>
               </div>
             )
           })}
 
-          <div className="card mt-4 p-4">
+          {/* Simplify debts toggle */}
+          <div className="card mt-4 flex items-center justify-between p-4">
+            <div>
+              <div className="text-sm font-semibold">Simplify debts</div>
+              <div className="text-xs text-gray-400 dark:text-slate-500">
+                {simplify ? 'Fewest transfers (A → B → C becomes A → C)' : 'Exact who-owes-whom'}
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={simplify}
+              onClick={() => setSimplify((s) => !s)}
+              className={`relative h-6 w-11 rounded-full transition ${simplify ? 'bg-brand-500' : 'bg-gray-300 dark:bg-slate-600'}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${simplify ? 'left-[22px]' : 'left-0.5'}`}
+              />
+            </button>
+          </div>
+
+          <div className="card p-4">
             <div className="mb-2 text-sm font-semibold">Suggested payments</div>
             {debts.length === 0 ? (
-              <p className="text-sm text-gray-500">Everyone is settled up. 🎉</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">Everyone is settled up. 🎉</p>
             ) : (
               <ul className="space-y-1.5 text-sm">
                 {debts.map((d, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="font-medium">{nameOf(d.from)}</span>
-                    <span className="text-gray-400">→</span>
+                    <span className="text-gray-400 dark:text-slate-500">→</span>
                     <span className="font-medium">{nameOf(d.to)}</span>
                     <span className="ml-auto font-semibold text-brand-600">{fmt(d.amount)}</span>
                   </li>
@@ -293,18 +334,18 @@ export default function GroupDetail() {
           <div className="card p-4">
             <div className="mb-3 text-sm font-semibold">Monthly spending (last 6 months)</div>
             {byMonth.every(([, v]) => v === 0) ? (
-              <p className="text-sm text-gray-400">No data yet.</p>
+              <p className="text-sm text-gray-400 dark:text-slate-500">No data yet.</p>
             ) : (
               <div className="flex items-end gap-2">
                 {byMonth.map(([label, val]) => (
                   <div key={label} className="flex flex-1 flex-col items-center gap-1">
-                    <div className="w-full rounded-t-sm bg-brand-100" style={{ height: 80 }}>
+                    <div className="w-full rounded-t-sm bg-brand-100 dark:bg-brand-500/20" style={{ height: 80 }}>
                       <div
                         className="w-full rounded-t-sm bg-brand-500 transition-all"
                         style={{ height: `${(val / maxMonth) * 100}%`, marginTop: `${(1 - val / maxMonth) * 100}%` }}
                       />
                     </div>
-                    <div className="text-center text-[10px] text-gray-400">{label}</div>
+                    <div className="text-center text-[10px] text-gray-400 dark:text-slate-500">{label}</div>
                   </div>
                 ))}
               </div>
@@ -315,7 +356,7 @@ export default function GroupDetail() {
           <div className="card p-4">
             <div className="mb-3 text-sm font-semibold">By category</div>
             {byCategory.length === 0 ? (
-              <p className="text-sm text-gray-400">No expenses yet.</p>
+              <p className="text-sm text-gray-400 dark:text-slate-500">No expenses yet.</p>
             ) : (
               <div className="space-y-2">
                 {byCategory.map(([key, val]) => {
@@ -326,7 +367,7 @@ export default function GroupDetail() {
                         <span>{meta.emoji} {meta.label}</span>
                         <span className="font-medium tabular-nums">{fmt(val)}</span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800">
                         <div
                           className="h-full rounded-full bg-brand-400 transition-all"
                           style={{ width: `${(val / maxCat) * 100}%` }}
@@ -345,37 +386,46 @@ export default function GroupDetail() {
       {tab === 'recurring' && (
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm text-gray-500">Auto-added on schedule when you open the group.</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Auto-added on schedule when you open the group.</p>
             <button className="btn-primary text-sm" onClick={() => setShowRecurring(true)}>+ Add</button>
           </div>
 
           {recurring.length === 0 ? (
             <div className="card p-8 text-center">
               <div className="text-3xl">🔁</div>
-              <p className="mt-2 font-medium text-gray-600">No recurring expenses</p>
-              <p className="mt-1 text-sm text-gray-400">Rent, subscriptions, utility bills…</p>
+              <p className="mt-2 font-medium text-gray-600 dark:text-slate-300">No recurring expenses</p>
+              <p className="mt-1 text-sm text-gray-400 dark:text-slate-500">Rent, subscriptions, utility bills…</p>
               <button className="btn-primary mt-3" onClick={() => setShowRecurring(true)}>Add one</button>
             </div>
           ) : (
             <ul className="space-y-2">
               {recurring.map((r) => (
                 <li key={r.id} className="card flex items-center gap-3 p-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 text-lg">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 text-lg dark:bg-slate-800">
                     {categoryMeta(r.category).emoji}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{r.description}</div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-400 dark:text-slate-500">
                       {fmt(Number(r.amount))} · {r.frequency} · next {new Date(r.next_due_at).toLocaleDateString()}
                     </div>
                   </div>
-                  <button className="btn-ghost px-2 py-1 text-xs text-gray-400"
+                  <button className="btn-ghost px-2 py-1 text-xs text-gray-400 dark:text-slate-500"
                     onClick={() => toggleActive(r.id, !r.active)}>
                     {r.active ? 'Pause' : 'Resume'}
                   </button>
                   {r.created_by === uid && (
-                    <button className="btn-ghost px-2 py-1 text-xs text-rose-500"
-                      onClick={() => deleteRecurring(r.id)}>Del</button>
+                    confirmDelRec === r.id ? (
+                      <span className="flex items-center gap-1">
+                        <button className="btn-ghost px-2 py-1 text-xs"
+                          onClick={() => setConfirmDelRec(null)}>Cancel</button>
+                        <button className="btn px-2 py-1 text-xs bg-rose-500 text-white hover:bg-rose-600"
+                          onClick={() => { deleteRecurring(r.id); setConfirmDelRec(null) }}>Delete</button>
+                      </span>
+                    ) : (
+                      <button className="btn-ghost px-2 py-1 text-xs text-rose-500"
+                        onClick={() => setConfirmDelRec(r.id)}>Del</button>
+                    )
                   )}
                 </li>
               ))}
@@ -385,17 +435,17 @@ export default function GroupDetail() {
       )}
 
       {/* Leave group */}
-      <div className="mt-10 border-t border-gray-100 pt-6">
+      <div className="mt-10 border-t border-gray-100 pt-6 dark:border-slate-800">
         {leaveError && <p className="mb-2 text-sm text-rose-600">{leaveError}</p>}
         <button
-          className="btn-ghost w-full text-rose-500 hover:bg-rose-50"
+          className="btn-ghost w-full text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30"
           onClick={leaveGroup}
           disabled={leaving}
         >
           {leaving ? 'Leaving…' : 'Leave group'}
         </button>
         {Math.abs(myBalance) > 0.01 && (
-          <p className="mt-1 text-center text-xs text-gray-400">
+          <p className="mt-1 text-center text-xs text-gray-400 dark:text-slate-500">
             Settle your balance first before leaving.
           </p>
         )}
@@ -421,7 +471,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="card p-3 text-center">
       <div className="text-lg font-bold tabular-nums">{value}</div>
-      <div className="text-xs text-gray-400">{label}</div>
+      <div className="text-xs text-gray-400 dark:text-slate-500">{label}</div>
     </div>
   )
 }
@@ -429,7 +479,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition ${active ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}>
+      className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition ${active ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-100' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800'}`}>
       {children}
     </button>
   )

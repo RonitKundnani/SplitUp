@@ -228,14 +228,14 @@ export default function AddExpenseModal({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="label mb-0">Split</label>
-            <div className="flex rounded-lg bg-gray-100 p-0.5 text-xs font-medium">
+            <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-slate-800 text-xs font-medium">
               {(Object.keys(MODE_LABELS) as SplitMode[]).map((m) => (
                 <button
                   type="button"
                   key={m}
                   onClick={() => setMode(m)}
                   className={`rounded-md px-2.5 py-1 transition ${
-                    mode === m ? 'bg-white shadow-sm' : 'text-gray-500'
+                    mode === m ? 'bg-white shadow-sm dark:bg-slate-700' : 'text-gray-500 dark:text-slate-400'
                   }`}
                 >
                   {MODE_LABELS[m]}
@@ -245,13 +245,13 @@ export default function AddExpenseModal({
           </div>
 
           {mode === 'full' && (
-            <p className="mb-2 text-xs text-gray-500">
+            <p className="mb-2 text-xs text-gray-500 dark:text-slate-400">
               The whole amount is owed by one person. Combine with “Paid by” above — e.g. you paid
               and they owe all of it means you lent them the full amount.
             </p>
           )}
 
-          <div className="space-y-1 rounded-lg border border-gray-200 p-2">
+          <div className="space-y-1 rounded-lg border border-gray-200 dark:border-slate-700 p-2">
             {members.map((m) => (
               <div key={m.id} className="flex items-center gap-3 rounded-md px-2 py-1.5">
                 {mode === 'equal' && (
@@ -283,13 +283,13 @@ export default function AddExpenseModal({
                       type="number"
                       step="0.1"
                       min="0"
-                      className="w-16 rounded-md border border-gray-300 px-2 py-1 text-right text-sm"
+                      className="w-16 rounded-md border border-gray-300 dark:border-slate-700 px-2 py-1 text-right text-sm"
                       value={percent[m.id] ?? ''}
                       onChange={(e) => setPercent((p) => ({ ...p, [m.id]: e.target.value }))}
                       placeholder="0"
                     />
-                    <span className="text-xs text-gray-400">%</span>
-                    <span className="w-20 text-right text-xs tabular-nums text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-slate-500">%</span>
+                    <span className="w-20 text-right text-xs tabular-nums text-gray-400 dark:text-slate-500">
                       {fmt(splitMap[m.id] ?? 0)}
                     </span>
                   </div>
@@ -298,13 +298,13 @@ export default function AddExpenseModal({
                     type="number"
                     step="0.01"
                     min="0"
-                    className="w-24 rounded-md border border-gray-300 px-2 py-1 text-right text-sm"
+                    className="w-24 rounded-md border border-gray-300 dark:border-slate-700 px-2 py-1 text-right text-sm"
                     value={custom[m.id] ?? ''}
                     onChange={(e) => setCustom((c) => ({ ...c, [m.id]: e.target.value }))}
                     placeholder="0.00"
                   />
                 ) : (
-                  <span className="text-sm tabular-nums text-gray-500">
+                  <span className="text-sm tabular-nums text-gray-500 dark:text-slate-400">
                     {(mode === 'equal' && involved.has(m.id)) || (mode === 'full' && fullPayer === m.id)
                       ? fmt(splitMap[m.id] ?? 0)
                       : '—'}
@@ -317,7 +317,7 @@ export default function AddExpenseModal({
           {mode === 'percent' && (
             <p
               className={`mt-1 text-right text-xs ${
-                Math.abs(percentSum - 100) > 0.1 ? 'text-rose-600' : 'text-gray-400'
+                Math.abs(percentSum - 100) > 0.1 ? 'text-rose-600' : 'text-gray-400 dark:text-slate-500'
               }`}
             >
               {percentSum}% of 100%
@@ -326,7 +326,7 @@ export default function AddExpenseModal({
           {mode === 'custom' && (
             <p
               className={`mt-1 text-right text-xs ${
-                Math.abs(splitSum - total) > 0.01 ? 'text-rose-600' : 'text-gray-400'
+                Math.abs(splitSum - total) > 0.01 ? 'text-rose-600' : 'text-gray-400 dark:text-slate-500'
               }`}
             >
               {fmt(splitSum)} of {fmt(total)}

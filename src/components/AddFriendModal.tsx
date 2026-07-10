@@ -32,7 +32,7 @@ export default function AddFriendModal({
   return (
     <Modal open={open} onClose={onClose} title="Add a friend">
       <form onSubmit={submit} className="space-y-4">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           Creates a private space between you two for tracking personal expenses — like lending
           money, shared meals, or anything 1-on-1.
         </p>

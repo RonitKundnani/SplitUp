@@ -30,7 +30,7 @@ export default function Modal({
         className="card max-h-[92vh] w-full max-w-md overflow-y-auto rounded-b-none sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button className="btn-ghost px-2 py-1 text-xl leading-none" onClick={onClose}>
             ×
