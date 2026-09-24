@@ -1,0 +1,44 @@
+# Keeps the free-tier Supabase project from auto-pausing.
+# Supabase pauses free projects after 7 days without activity, so this
+# pings the database every 3 days via the REST API.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '0 6 */3 * *' # 06:00 UTC every 3 days
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+permissions:
+  actions: write # needed by keepalive-workflow to stop GitHub disabling this cron
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL / SUPABASE_ANON_KEY secrets are not set"
+            exit 1
+          fi
+          # A real table query so Postgres itself registers activity.
+          # RLS returns [] for the anon role, which is fine — the query still runs.
+          for attempt in 1 2 3; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' \
+              "$SUPABASE_URL/rest/v1/groups?select=id&limit=1" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            echo "Attempt $attempt: HTTP $status"
+            if [ "$status" = "200" ]; then exit 0; fi
+            sleep 30
+          done
+          echo "::error::Supabase did not respond with 200 (project may be paused — restore it from the dashboard)"
+          exit 1
+
+      # GitHub disables scheduled workflows after 60 days with no repo commits.
+      # This re-enables the workflow via the API (no dummy commits).
+      - name: Prevent GitHub from disabling this workflow
+        uses: gautamkrishnar/keepalive-workflow@v2
